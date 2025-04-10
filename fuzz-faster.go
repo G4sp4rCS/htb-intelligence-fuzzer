@@ -100,7 +100,6 @@ func convertPDFtoText(pdfPath string) (string, error) {
 }
 
 
-
 func searchCredentialsInPDFs() {
 	files, err := filepath.Glob("*.pdf")
 	if err != nil {
@@ -122,6 +121,23 @@ func searchCredentialsInPDFs() {
 		if reCreds.MatchString(text) {
 			fmt.Printf("\033[35m[!] Posibles credenciales en %s:\033[0m\n", file)
 			fmt.Println(text)
+
+			// Buscar metadatos relevantes con exiftool
+			cmd := exec.Command("exiftool", file)
+			output, err := cmd.Output()
+			if err != nil {
+				fmt.Printf("\033[33m[!] Falló exiftool en %s: %v\033[0m\n", file, err)
+				continue
+			}
+
+			fmt.Printf("\033[36m[+] Metadatos en %s:\033[0m\n", file)
+			lines := strings.Split(string(output), "\n")
+			for _, line := range lines {
+				lower := strings.ToLower(line)
+				if strings.Contains(lower, "author") || strings.Contains(lower, "creator") || strings.Contains(lower, "producer") {
+					fmt.Printf("    %s\n", line)
+				}
+			}
 		}
 	}
 }
